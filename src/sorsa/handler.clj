@@ -5,6 +5,7 @@
             [compojure.route :as route]
             [clojure.data.json :as json]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [ring.adapter.jetty :as jetty]
             [clojure.java.jdbc :as jdbc]
             [honeysql.core :as sql]
             [environ.core :refer [env]]))
