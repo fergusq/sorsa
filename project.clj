@@ -5,6 +5,7 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [compojure "1.6.1"]
                  [ring/ring-defaults "0.3.2"]
+                 [ring/ring-jetty-adapter "1.7.1"]
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "9.4.1211"]
                  [com.bhauman/rebel-readline "0.1.4"]
