@@ -1,79 +1,84 @@
 (ns sorsa.handler
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [compojure.core :refer [defroutes GET POST]]
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [compojure.core :refer [defroutes GET PUT]]
             [compojure.handler :refer [site]]
             [compojure.route :as route]
-            [clojure.data.json :as json]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [ring.adapter.jetty :as jetty]
-            [clojure.java.jdbc :as jdbc]
             [environ.core :refer [env]]
-            [sorsa.database :refer [db
-                                    check-password?
+            [hiccup.page :refer [html5]]
+            [ring.adapter.jetty :as jetty]
+            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+            [sorsa.database :refer [check-password?
                                     query-content
                                     query-folder-listing
-                                    query-exists-folder?]]))
+                                    query-exists-folder?
+                                    delete-document!
+                                    insert-document!
+                                    insert-folder!]]))
 
-; DB access functions
-
-(def response-401 {:status 401
+(def response-403 {:status 403
                    :headers {"Content-Type" "text/html; charseT=utf-8"}
-                   :body "<!DOCTYPE html><title>401 Forbidden</title><h1>401 Forbidden</h1>"})
+                   :body (html5
+                          [:title "403 Forbidden"]
+                          [:h1 "403 Forbidden"]
+                          [:p "Invalid or missing password."
+                           " Please use the " [:code "password"] " query parameter."])})
 
 (defn response-json [data] {:status 200
                             :headers {"Content-Type" "application/json; charset=utf-8"}
                             :body (json/write-str data)})
 
-(defn escape-html [text]
-  (str/escape text {\< "&lt;"
-                    \> "&gt;"
-                    \& "&amp;"}))
-
 (defroutes app-routes
   (GET "/" []
     (io/file "resources/public/index.html"))
   
-  (GET "/:folder/document/:document" [folder document password]
+  (GET "/folder/:folder/document/:document" [folder document password]
     (if (check-password? folder password)
       (query-content folder document)
-      response-401))
+      response-403))
   
-  (GET "/:folder/list" [folder password]
+  (GET "/folder/:folder/list" [folder password]
     (if (check-password? folder password)
       (response-json (query-folder-listing folder))
-      response-401))
+      response-403))
   
-  (GET "/:folder/view" [folder password]
+  (GET "/folder/:folder/view" [folder password]
     (if (check-password? folder password)
       (let [documents (query-folder-listing folder)]
-        (str "<!DOCTYPE html>"
-             "<title>" (escape-html folder) "</title>"
-             "<h1>" (escape-html folder) "/</h1>"
-             "<table><tr><th>Document</th><th>Size</th>"
-             (str/join (for [document documents]
-                         (str "<tr><td>" (escape-html (:name document)) "</td><td>" (:size document) "</td>")))
-             "</table>"))
-      response-401))
+        (html5
+         [:title folder]
+         [:h1 "Folder listing - " folder]
+         [:table
+          [:tr [:th "Document"] [:th "Size"]]
+          (for [document documents]
+            [:tr
+             [:td [:a {:href (str
+                              "/folder/" folder
+                              "/document/" (:name document)
+                              "?password=" password)}
+                   (:name document)]]
+             [:td (:size document)]])]))
+      response-403))
   
-  (POST "/:folder/document/:document" [folder document content password]
-    (case (query-exists-folder? folder)
-      1 (if (check-password? folder password)
-          (do (jdbc/execute! db ["DELETE FROM document WHERE folder = ? AND name = ?" folder document])
-              (jdbc/insert! db :document {:name document
-                                          :folder folder
-                                          :content content}))
-          response-401)
-      (do (jdbc/insert! db :folder {:name folder
-                                    :password password})
-          (jdbc/insert! db :document {:name document
-                                      :folder folder
-                                      :content content}))))
+  (PUT "/folder/:folder/document/:document" [folder document content password]
+    (let [document-obj {:name document
+                        :folder folder
+                        :content content}]
+      (if (query-exists-folder? folder)
+        (if (check-password? folder password)
+          (do (delete-document! folder document)
+              (insert-document! document-obj)
+              (response-json document-obj))
+          response-403)
+        (do (insert-folder! {:name folder
+                             :password password})
+            (insert-document! document-obj)
+            (response-json document-obj)))))
   
   (route/not-found "Not Found"))
 
 (def app
-  (wrap-defaults app-routes site-defaults))
+  (wrap-defaults app-routes api-defaults))
 
 (defn -main [& [port]]
   (let [port (Integer. (or port (env :port) 5000))]

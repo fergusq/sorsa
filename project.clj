@@ -10,7 +10,8 @@
                  [org.postgresql/postgresql "9.4.1211"]
                  [com.bhauman/rebel-readline "0.1.4"]
                  [org.clojure/data.json "0.2.6"]
-                 [environ "1.1.0"]]
+                 [environ "1.1.0"]
+                 [hiccup "1.0.5"]]
   :plugins [[lein-ring "0.12.5"]]
   :ring {:handler sorsa.handler/app}
   :uberjar-name "sorsa.jar"

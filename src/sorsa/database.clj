@@ -25,13 +25,22 @@
               {:row-fn #(hash-map :name (:name %)
                                   :size (count (:content %)))}))
 
-; Table creation
-
 (defn query-exists-folder? [folder]
   (>= 1 (jdbc/query db
                     ["SELECT COUNT(*) AS count FROM folder WHERE name = ?" folder]
                     {:row-fn :count
                      :result-set-fn first})))
+
+(defn delete-document! [folder document]
+  (jdbc/execute! db ["DELETE FROM document WHERE folder = ? AND name = ?" folder document]))
+
+(defn insert-document! [document-obj]
+  (jdbc/insert! db :document document-obj))
+
+(defn insert-folder! [folder-obj]
+  (jdbc/insert! db :folder folder-obj))
+
+; Table creation
 
 (def ^:private document-table-ddl
   (jdbc/create-table-ddl :document

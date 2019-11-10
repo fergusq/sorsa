@@ -3,13 +3,13 @@
 <h1>Sorsa Source Storage API</h1>
 <p>Sorsa is used through an HTTP API. The following requests are supported:</p>
 <dl>
-    <dh>GET /:folder/list?password=:password</dh>
+    <dh>GET /folder/:folder/list?password=:password</dh>
     <dd>Returns contents of a folder</dd>
 
-    <dh>GET /:folder/document/:document?password=:password</dh>
+    <dh>GET /folder/:folder/document/:document?password=:password</dh>
     <dd>Returns contents of a document</dd>
 
-    <dh>POST /:folder/document/:document?content=:content&password=:password</dh>
+    <dh>POST /folder/:folder/document/:document?content=:content&password=:password</dh>
     <dd>
         Inserts a document with content <code>:content</code> to the storage.
         If the folder does not exist, sets the password.
