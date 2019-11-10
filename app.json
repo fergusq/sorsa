@@ -1,0 +1,5 @@
+{
+    "image": "heroku/clojure",
+    "addons": [ "heroku-postgresql" ]
+}
+
