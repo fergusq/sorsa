@@ -25,8 +25,14 @@
                            " Please use the " [:code "password"] " query parameter."])})
 
 (defn response-json [data] {:status 200
-                            :headers {"Content-Type" "application/json; charset=utf-8"}
+                            :headers {"Content-Type" "application/json; charset=utf-8"
+                                      "Access-Control-Allow-Origin" "*"}
                             :body (json/write-str data)})
+
+(defn response-content [data] {:status 200
+                               :headers {"Content-Type" "text/html; charset=utf-8"
+                                         "Access-Control-Allow-Origin" "*"}
+                               :body data})
 
 (defroutes app-routes
   (GET "/" []
@@ -34,7 +40,7 @@
   
   (GET "/folder/:folder/document/:document" [folder document password]
     (if (check-password? folder password)
-      (query-content folder document)
+      (response-content (query-content folder document))
       response-403))
   
   (GET "/folder/:folder/list" [folder password]
