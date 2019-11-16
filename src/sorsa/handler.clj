@@ -1,7 +1,7 @@
 (ns sorsa.handler
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [compojure.core :refer [defroutes GET PUT]]
+            [compojure.core :refer [defroutes GET PUT OPTIONS]]
             [compojure.handler :refer [site]]
             [compojure.route :as route]
             [environ.core :refer [env]]
@@ -65,6 +65,12 @@
                    (:name document)]]
              [:td (:size document)]])]))
       response-403))
+
+  (OPTIONS "/folder/:folder/document/:document" [folder document]
+    {:status 200
+     :headers {"Access-Control-Allow-Origin" "*"
+               "Access-Control-Allow-Methods" "GET, PUT"
+               "Access-Control-Max-Age" "86400"}})
   
   (PUT "/folder/:folder/document/:document" [folder document content password]
     (let [document-obj {:name document
